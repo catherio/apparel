@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <body>
+	{% if img_url is not none %}
+	<p><img src="{{ img_url }}" alt="Original image" width="{{ width }}"></p>
+	{% endif %}
+
+	<canvas id="myCanvas" width="{{ width }} " height="{{ height }}"
+			style="border:1px solid #d3d3d3;">
+	  Your browser does not support the HTML5 canvas tag.</canvas>
+	<script>
+	  var c = document.getElementById("myCanvas");
+	  var ctx = c.getContext("2d");
+	  {% for color in colors %}
+	  ctx.fillStyle="{{ color.raw_hex }}";
+	  ctx.fillRect({{ color.start }}, 0, {{ color.end }}, {{ height }});
+      {% endfor %}
+	</script>
+
+	<p>
+	  {% for color in colors %}
+	  <p>{{ color.hsv }}</p>
+      {% endfor %}
+	</p>
+  </body>
+</html>

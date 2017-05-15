@@ -31,19 +31,30 @@ from clarifai.rest import ClarifaiApp
 logger = logging.getLogger(__name__)
 
 
-def take_photo(save_as='temp.png'):
+def take_photo(save_as='temp.png', crop=True):
     logger.critical("Taking photograph!")
     cap = cv2.VideoCapture(0)
 
     adjust_to_light_frames = 30
     for i in range(adjust_to_light_frames):
         ret, frame = cap.read()
+    if crop:
+        frame = crop_square(frame)
 
     if not ret:
         raise Exception
     cv2.imwrite(save_as, frame)
     del(cap)
     return frame, save_as
+
+
+def crop_square(pic):
+    desired = min(pic.shape[0], pic.shape[1])
+    height_offset = math.ceil((pic.shape[0] - desired) / 2)
+    width_offset = math.ceil((pic.shape[1] - desired) / 2)
+    cropped_img = pic[height_offset:height_offset + desired,
+                      width_offset:width_offset + desired, :]
+    return cropped_img
 
 
 app = ClarifaiApp(app_id=os.environ['CLARIFAI_CLIENT_ID'],
@@ -93,7 +104,8 @@ def htmlify(colors, chosen_colors=None, img_url=None):
 theme_template = 'appar.el.template'
 theme_file = 'appar.el'
 emacs_neutral = ['#839496']
-emacs_highlights = ["#268bd2", "#2aa198", "#859900"]
+emacs_highlights = ["#268bd2", "#2aa198", "#859900", "#b58900", "#cb4b16",
+                    "#dc322f", "#d33682", "#6c71c4"]
 MIN_HSV_VALUE = 0.25
 
 
@@ -108,8 +120,13 @@ def make_emacs_theme(emacs_colors, new_colors):
                      c['hsv'][2] < 0.9]
     chosen_colors = sorted(chosen_colors, key=lambda c: -c['hsv'][1])
 
-    for (i, c) in enumerate(emacs_colors):
-        theme = theme.replace(c, chosen_colors[i]['raw_hex'])
+    idx = 0
+    for c in emacs_colors:
+        theme = theme.replace(c, chosen_colors[idx]['raw_hex'])
+        idx = idx + 1
+        if idx >= len(chosen_colors):
+            idx = 0
+
     with open(theme_file, 'w') as output:
         output.write(theme)
 
@@ -120,7 +137,8 @@ def make_emacs_theme(emacs_colors, new_colors):
 @click.option('--load', type=str, default=None)
 @click.option('--save_as', type=str, default='temp.png')
 @click.option('--obnoxious', is_flag=True, default=True)
-def main(load, save_as, obnoxious):
+@click.option('--crop', is_flag=True, default=True)
+def main(load, save_as, obnoxious, crop):
     logger.setLevel(logging.INFO)
     logger.critical("Running")
 
@@ -134,7 +152,7 @@ def main(load, save_as, obnoxious):
         chosen_colors = make_emacs_theme(emacs_colors, colors)
         htmlify(colors, chosen_colors, load)
     else:
-        take_photo(save_as=save_as)
+        take_photo(save_as=save_as, crop=crop)
         colors = pic_colors(filename=save_as)
         chosen_colors = make_emacs_theme(emacs_colors, colors)
         htmlify(colors, chosen_colors, save_as)

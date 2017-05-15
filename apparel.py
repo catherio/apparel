@@ -101,18 +101,16 @@ def htmlify(colors, chosen_colors=None, img_url=None):
                                 img_url=img_url))
 
 
-theme_template = 'appar.el.template'
-theme_file = 'appar.el'
+vim_template = 'solarized.vim.template'
+vim_file = 'apparel.vim'
+emacs_template = 'appar.el.template'
+emacs_file = 'appar.el'
 emacs_neutral = ['#839496']
 emacs_highlights = ["#268bd2", "#2aa198", "#859900", "#b58900", "#cb4b16",
                     "#dc322f", "#d33682", "#6c71c4"]
 MIN_HSV_VALUE = 0.25
 
-
-def make_emacs_theme(emacs_colors, new_colors):
-    logger.info('Creating emacs theme')
-    with open(theme_template, 'r') as template:
-        theme = template.read()
+def make_themes(emacs_colors, new_colors):
 
     # filter for sufficent brightness, sort by saturation
     chosen_colors = [c for c in new_colors if
@@ -120,15 +118,20 @@ def make_emacs_theme(emacs_colors, new_colors):
                      c['hsv'][2] < 0.9]
     chosen_colors = sorted(chosen_colors, key=lambda c: -c['hsv'][1])
 
-    idx = 0
-    for c in emacs_colors:
-        theme = theme.replace(c, chosen_colors[idx]['raw_hex'])
-        idx = idx + 1
-        if idx >= len(chosen_colors):
-            idx = 0
+    for template_f, output_theme_file in ((vim_template, vim_file),
+                                          (emacs_template, emacs_file)):
+        logger.info('Creating theme from %s', template_f)
+        with open(template_f, 'r') as template:
+            theme = template.read()
+        idx = 0
+        for c in emacs_colors:
+            theme = theme.replace(c, chosen_colors[idx]['raw_hex'])
+            idx = idx + 1
+            if idx >= len(chosen_colors):
+                idx = 0
 
-    with open(theme_file, 'w') as output:
-        output.write(theme)
+        with open(output_theme_file, 'w') as output:
+            output.write(theme)
 
     return chosen_colors
 
@@ -149,12 +152,12 @@ def main(load, save_as, obnoxious, crop):
 
     if load:
         colors = pic_colors(filename=load)
-        chosen_colors = make_emacs_theme(emacs_colors, colors)
+        chosen_colors = make_themes(emacs_colors, colors)
         htmlify(colors, chosen_colors, load)
     else:
         take_photo(save_as=save_as, crop=crop)
         colors = pic_colors(filename=save_as)
-        chosen_colors = make_emacs_theme(emacs_colors, colors)
+        chosen_colors = make_themes(emacs_colors, colors)
         htmlify(colors, chosen_colors, save_as)
 
     logger.critical("Done!")

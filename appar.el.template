@@ -23,7 +23,7 @@
 ;;
 ;; Based on Solarized for Emacs:
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
-;; Author: Thomas Frössman <thomasf@jossystem.se>
+;; Author: Thomas Frossman <thomasf@jossystem.se>
 ;; URL: http://github.com/bbatsov/solarized-emacs
 ;;
 ;; Ethan Schoonover created the original theme for vim on such this port
